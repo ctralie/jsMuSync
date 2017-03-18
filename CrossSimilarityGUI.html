@@ -1,0 +1,153 @@
+<html>
+<head>
+<!--My Scripts!-->
+<script src="UtilityFunctions.js"></script>
+<script src="CrossSimilarityCanvas.js"></script>
+</head>
+
+
+<table>
+<tr><td><h3>File Input</h3></td><td><input type = "file" id = "fileInput"></td></tr>
+</table>
+
+<h2><p id = "pagestatus"></p></h2>
+
+<table border = "1">
+<tr><td colspan = "2">
+<table>
+<tr>
+<td><button type = "button" onclick = "playAudioButton()">Play</button></td>
+<td><button type = "button" onclick = "pauseAudio()">Pause</button></td>
+</tr>
+</table>
+</td></tr>
+<tr><td colspan = "2">
+<canvas id="CrossSimilarityCanvas" width="800" height="600">
+</td></tr>
+
+</table>
+
+<script>
+    var source = null;
+    var analyser = null;
+    var context = new (window.AudioContext || window.webkitAudioContext)();
+    var buffer1 = null;
+    var buffer2 = null;
+    var waitingDisp = document.getElementById("pagestatus");
+    var playing = false;
+
+    function disconnect() {
+        source.stop();
+        source.disconnect(0);
+        analyser.disconnect(0);
+    }
+
+    csmctx = document.getElementById('CrossSimilarityCanvas').getContext('2d');
+	initCanvasHandlers();
+
+    var fileInput = document.getElementById('fileInput');
+	fileInput.addEventListener('change', function(e) {
+		var file = fileInput.files[0];
+		var reader = new FileReader();
+		reader.onload = function(e) {
+            var Results = JSON.parse(reader.result);
+            //Setup audio buffers
+            var arrayBuff = base64ToArrayBuffer(Results.file1);
+            decodeAudio(arrayBuff, 1);
+            arrayBuff = base64ToArrayBuffer(Results.file2);
+            decodeAudio(arrayBuff, 2);
+            bts1 = Results.beats1;
+            bts2 = Results.beats2;
+            for (val in Results.FeatureCSMs) {
+                console.log(val);
+            }
+            CSImage.src = "data:image/png;base64, " + Results.FeatureCSMs.Chromas.CSM;
+		}
+		reader.readAsText(file);
+	});
+
+
+    function playAudioButton() {
+        if (!playing) {
+            //Prevent the user from accidentally playing multiple audio streams
+            if (playing1) {
+                playAudio(1);
+            }
+            else {
+                playAudio(2);
+            }
+        }
+    }
+
+    function pauseAudio() {
+        console.log("Pausing");
+        if (source === null) {
+            return;
+        }
+        playing = false;
+        source.stop();
+    }
+
+    function playAudio(songidx) {
+        if (context === null) {
+            return;
+        }
+        playing = true;
+        var offsetTime;
+        source = context.createBufferSource();
+        if (songidx == 1) {
+            source.buffer = buffer1;
+            playing1 = true;
+            offsetTime = offset1;
+        }
+        else {
+            source.buffer = buffer2;
+            playing1 = false;
+            offsetTime = offset2;
+        }
+        console.log("Playing audio, offsetTime = " + offsetTime);
+        analyser = context.createAnalyser();
+        source.connect(analyser);
+        analyser.connect(context.destination);
+
+        startTime = context.currentTime;
+
+        //setTimeout(disconnect, source.buffer.duration * 1000 +1000);
+        console.log("offset1 = " + offset1);
+        console.log("offset2 = " + offset2);
+        console.log("Starting, offsetTime = " + offsetTime);
+        source.start(context.currentTime, offsetTime, source.buffer.duration - offsetTime);
+
+        playIdx = 0;
+        playIdxCSM = 0;
+        //requestAnimFrame(function(){repaintWithContext(context)});
+        //requestAnimFrame(updateCSMCanvas);
+    }
+
+    function decodeAudio(arrayBuff, target) {
+        if(context.decodeAudioData) {
+            context.decodeAudioData(arrayBuff, function(buff) {
+                if (target == 1) {
+                    buffer1 = buff;
+                }
+                else {
+                    buffer2 = buff;
+                }
+            }, function(e) {
+                console.log(e);
+            });
+        }
+        else {
+            if (target == 1) {
+                buffer1 = context.createBuffer(1, 22050, 44100);
+            }
+            else {
+                buffer2 = context.createBuffer(1, 22050, 44100);
+            }
+        }
+    }
+</script>
+
+
+</body>
+</html>

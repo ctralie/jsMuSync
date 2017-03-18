@@ -55,9 +55,11 @@ def compareTwoSongsJSON(filename1, TempoBias1, filename2, TempoBias2, hopSize, F
 
     print "Feature Types: ", Features1.keys()
 
+    beats1 = beats1*hopSize/float(Fs)
+    beats2 = beats2*hopSize/float(Fs)
     Results = {'song1name':song1name, 'song2name':song2name, 'hopSize':hopSize, 'FeatureParams':FeatureParams, 'Kappa':Kappa, 'CSMTypes':CSMTypes, 'beats1':pretty_floats(beats1.tolist()), 'beats2':pretty_floats(beats2.tolist())}
     #Do each feature individually
-    FeatureCSMs = []
+    FeatureCSMs = {}
     for FeatureName in Features1:
         print "Doing %s..."%FeatureName
         res =  getCSMSmithWatermanScores([Features1[FeatureName], O1, Features2[FeatureName], O2, Kappa, CSMTypes[FeatureName]], True)
@@ -66,8 +68,7 @@ def compareTwoSongsJSON(filename1, TempoBias1, filename2, TempoBias2, hopSize, F
         CSMs['CSM'] = getBase64PNGImage(res['CSM'], 'afmhot')
         CSMs['DBinary'] = getBase64PNGImage(1-res['DBinary'], 'gray')
         CSMs['score'] = res['score']
-        CSMs['FeatureName'] = FeatureName
-        FeatureCSMs.append(CSMs)
+        FeatureCSMs[FeatureName] = CSMs;
 
     #Do OR Merging
     print "Doing OR Merging..."
@@ -78,7 +79,7 @@ def compareTwoSongsJSON(filename1, TempoBias1, filename2, TempoBias2, hopSize, F
     CSMs['DBinary'] = CSMs['CSM']
     CSMs['score'] = res['score']
     CSMs['FeatureName'] = 'ORFusion'
-    FeatureCSMs.append(CSMs)
+    FeatureCSMs['ORFusion'] = CSMs
 
     #Do cross-similarity fusion
     print "Doing similarity network fusion..."
@@ -90,8 +91,7 @@ def compareTwoSongsJSON(filename1, TempoBias1, filename2, TempoBias2, hopSize, F
     CSMs['CSM'] = getBase64PNGImage(res['CSM'], 'afmhot')
     CSMs['DBinary'] = getBase64PNGImage(1-res['DBinary'], 'gray')
     CSMs['score'] = res['score']
-    CSMs['FeatureName'] = 'Similarity Network Fusion'
-    FeatureCSMs.append(CSMs)
+    FeatureCSMs['SNF'] = CSMs
 
     Results['FeatureCSMs'] = FeatureCSMs
     #Add music as base64 files
