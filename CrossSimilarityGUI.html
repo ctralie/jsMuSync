@@ -3,14 +3,33 @@
 <!--My Scripts!-->
 <script src="UtilityFunctions.js"></script>
 <script src="CrossSimilarityCanvas.js"></script>
+<style>
+body {
+    background-color: #202020;
+    color:#CCCCCC;
+}
+</style>
 </head>
+<body>
 
+<h1>Cover Songs Cross-Similarity GUI</h1>
+<h2>by Chris Tralie</h2>
 
 <table>
-<tr><td><h3>File Input</h3></td><td><input type = "file" id = "fileInput"></td></tr>
+<tr><td><h3>File Input</h3></td><td><input type = "file" id = "fileInput"></td><td colspan = "2"></td></tr>
+<tr>
+    <td><h3>Feature Type</h3></td><td><select id="FeatureType" name = "FeatureType"></select></td>
+    <td><h3>Image Type</h3></td><td>
+        <select id="ImageType" name = "ImageType">
+            <option value = "CSM">CSM</option>
+            <option value = "DBinary">Binary CSM</option>
+            <option value = "D">Smith-Waterman Matrix</option>
+        </select>
+    </td>
+</tr>
 </table>
 
-<h2><p id = "pagestatus"></p></h2>
+
 
 <table border = "1">
 <tr><td colspan = "2">
@@ -24,7 +43,9 @@
 <tr><td colspan = "2">
 <canvas id="CrossSimilarityCanvas" width="800" height="600">
 </td></tr>
-
+<tr><td colspan = "2">
+    <h3><p id = "pagestatus"><font color = "yellow">Waiting for user input...</font></p></h3>
+</td></tr>
 </table>
 
 <script>
@@ -35,6 +56,9 @@
     var buffer2 = null;
     var waitingDisp = document.getElementById("pagestatus");
     var playing = false;
+    var featureType = "";
+    var imageType = "CSM";
+    var FeatureCSMs = {};
 
     function disconnect() {
         source.stop();
@@ -44,6 +68,25 @@
 
     csmctx = document.getElementById('CrossSimilarityCanvas').getContext('2d');
 	initCanvasHandlers();
+
+    function selectImage() {
+        if (featureType.length > 0) {
+            CSImage.src = "data:image/png;base64, " + (FeatureCSMs[featureType])[imageType];
+            requestAnimationFrame(updateCSMCanvas);
+        }
+    }
+
+    var selectFeatureType = document.getElementById("FeatureType");
+    selectFeatureType.addEventListener('change', function(e){
+        featureType = e.target.value;
+        selectImage();
+    });
+
+    var selectImageType = document.getElementById("ImageType");
+    selectImageType.addEventListener('change', function(e){
+        imageType = e.target.value;
+        selectImage();
+    });
 
     var fileInput = document.getElementById('fileInput');
 	fileInput.addEventListener('change', function(e) {
@@ -58,10 +101,15 @@
             decodeAudio(arrayBuff, 2);
             bts1 = Results.beats1;
             bts2 = Results.beats2;
-            for (val in Results.FeatureCSMs) {
-                console.log(val);
+            FeatureCSMs = Results.FeatureCSMs;
+            for (val in FeatureCSMs) {
+                var option = document.createElement('option');
+                option.text = val;
+                selectFeatureType.add(option, val);
             }
-            CSImage.src = "data:image/png;base64, " + Results.FeatureCSMs.Chromas.CSM;
+            imageType = "CSM";
+            selectImage();
+            changeToReady();
 		}
 		reader.readAsText(file);
 	});
@@ -93,7 +141,6 @@
             return;
         }
         playing = true;
-        var offsetTime;
         source = context.createBufferSource();
         if (songidx == 1) {
             source.buffer = buffer1;
@@ -113,15 +160,12 @@
         startTime = context.currentTime;
 
         //setTimeout(disconnect, source.buffer.duration * 1000 +1000);
-        console.log("offset1 = " + offset1);
-        console.log("offset2 = " + offset2);
-        console.log("Starting, offsetTime = " + offsetTime);
         source.start(context.currentTime, offsetTime, source.buffer.duration - offsetTime);
 
         playIdx = 0;
         playIdxCSM = 0;
         //requestAnimFrame(function(){repaintWithContext(context)});
-        //requestAnimFrame(updateCSMCanvas);
+        requestAnimationFrame(updateCSMCanvas);
     }
 
     function decodeAudio(arrayBuff, target) {

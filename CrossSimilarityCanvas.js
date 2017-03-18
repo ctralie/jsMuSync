@@ -8,6 +8,8 @@ var playing1 = true;
 var playIdxCSM = 0;
 var bts1 = [];
 var bts2 = [];
+var startTime = 0;
+var offsetTime = 0;
 
 //Functions to handle mouse motion
 function releaseClickCSM(evt) {
@@ -16,13 +18,25 @@ function releaseClickCSM(evt) {
 	offset1idx = evt.offsetY;
 	offset2 = bts2[evt.offsetX];
 	offset2idx = evt.offsetX;
+
+	clickType = "LEFT";
+	evt.preventDefault();
+	if (evt.which) {
+	    if (evt.which == 3) clickType = "RIGHT";
+	    if (evt.which == 2) clickType = "MIDDLE";
+	}
+	else if (evt.button) {
+	    if (evt.button == 2) clickType = "RIGHT";
+	    if (evt.button == 4) clickType = "MIDDLE";
+	}
+
 	playing1 = true;
 	if (evt.button === 1) {
 		playing = false;
 		source.stop();
 		return;
 	}
-	if (evt.ctrlKey) {
+	if (clickType == "RIGHT") {
 		playing1 = false;
 	}
     if (playing) {
@@ -52,6 +66,7 @@ function clickerDraggedCSM(evt) {
 
 function initCanvasHandlers() {
     var canvas = document.getElementById('CrossSimilarityCanvas');
+    canvas.addEventListener("contextmenu", function(e){ e.stopPropagation(); e.preventDefault(); return false; }); //Need this to disable the menu that pops up on right clicking
     canvas.addEventListener('mousedown', makeClickCSM);
     canvas.addEventListener('mouseup', releaseClickCSM);
     canvas.addEventListener('mousemove', clickerDraggedCSM);
@@ -74,7 +89,7 @@ function redrawCSMCanvas() {
 		csmctx.moveTo(offset2idx, 0);
 		csmctx.lineTo(offset2idx, CSImage.height);
 	}
-	csmctx.strokeStyle = '#ff0000';
+	csmctx.strokeStyle = '#0020ff';
 	csmctx.stroke();
 }
 
@@ -87,7 +102,7 @@ function updateCSMCanvas() {
 	else {
 		bts = bts2;
 	}
-	while (bts[playIdxCSM][1] < t && playIdxCSM < bts.length - 1) {
+	while (bts[playIdxCSM] < t && playIdxCSM < bts.length - 1) {
 		playIdxCSM++;
 	}
 	if (playing1) {
@@ -98,6 +113,6 @@ function updateCSMCanvas() {
 	}
 	redrawCSMCanvas();
 	if (playing) {
-		requestAnimFrame(updateCSMCanvas);
+		requestAnimationFrame(updateCSMCanvas);
 	}
 }
