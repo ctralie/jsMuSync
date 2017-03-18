@@ -1,5 +1,7 @@
 <html>
 <head>
+<!--External Libraries!-->
+<script src="libs/interact.min.js"></script>
 <!--My Scripts!-->
 <script src="UtilityFunctions.js"></script>
 <script src="CrossSimilarityCanvas.js"></script>
@@ -27,23 +29,30 @@ body {
         </select>
     </td>
 </tr>
+<tr>
+    <td><h3>Score</h3></td>
+    <td><h3><p id = "score"></p></h3></td>
+</tr>
 </table>
 
 
 
 <table border = "1">
-<tr><td colspan = "2">
+<tr><td colspan = "4">
 <table>
 <tr>
 <td><button type = "button" onclick = "playAudioButton()">Play</button></td>
 <td><button type = "button" onclick = "pauseAudio()">Pause</button></td>
+<td colspan = "2"><h3><p id = "songname"></p></h3></td>
 </tr>
 </table>
 </td></tr>
-<tr><td colspan = "2">
-<canvas id="CrossSimilarityCanvas" width="800" height="600">
-</td></tr>
-<tr><td colspan = "2">
+<tr>
+<td colspan = "2">
+<canvas id="CrossSimilarityCanvas" width="800" height="700">
+</td>
+</tr>
+<tr><td colspan = "4">
     <h3><p id = "pagestatus"><font color = "yellow">Waiting for user input...</font></p></h3>
 </td></tr>
 </table>
@@ -59,6 +68,10 @@ body {
     var featureType = "";
     var imageType = "CSM";
     var FeatureCSMs = {};
+    var song1name = "";
+    var song2name = "";
+    var scoreTxt = document.getElementById("score");
+    var songnameTxt = document.getElementById("songname");
 
     function disconnect() {
         source.stop();
@@ -73,6 +86,9 @@ body {
         if (featureType.length > 0) {
             CSImage.src = "data:image/png;base64, " + (FeatureCSMs[featureType])[imageType];
             requestAnimationFrame(updateCSMCanvas);
+            var score = FeatureCSMs[featureType].score;
+            score = Math.round(score*1000)/1000;
+            scoreTxt.innerHTML = score;
         }
     }
 
@@ -101,6 +117,8 @@ body {
             decodeAudio(arrayBuff, 2);
             bts1 = Results.beats1;
             bts2 = Results.beats2;
+            song1name = Results.song1name;
+            song2name = Results.song2name;
             FeatureCSMs = Results.FeatureCSMs;
             for (val in FeatureCSMs) {
                 var option = document.createElement('option');
@@ -145,12 +163,14 @@ body {
         if (songidx == 1) {
             source.buffer = buffer1;
             playing1 = true;
-            offsetTime = offset1;
+            offsetTime = bts1[offset1idx];
+            songnameTxt.innerHTML = song1name;
         }
         else {
             source.buffer = buffer2;
             playing1 = false;
-            offsetTime = offset2;
+            offsetTime = bts2[offset2idx];
+            songnameTxt.innerHTML = song2name;
         }
         console.log("Playing audio, offsetTime = " + offsetTime);
         analyser = context.createAnalyser();

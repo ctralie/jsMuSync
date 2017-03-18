@@ -14,9 +14,7 @@ var offsetTime = 0;
 //Functions to handle mouse motion
 function releaseClickCSM(evt) {
 	evt.preventDefault();
-	offset1 = bts1[evt.offsetY];
 	offset1idx = evt.offsetY;
-	offset2 = bts2[evt.offsetX];
 	offset2idx = evt.offsetX;
 
 	clickType = "LEFT";
