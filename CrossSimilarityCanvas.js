@@ -77,6 +77,7 @@ function initCanvasHandlers() {
 }
 
 function redrawCSMCanvas() {
+    csmctx.fillRect(0, 0, 1000, 1000);
 	csmctx.drawImage(CSImage, 0, 0);
 	csmctx.beginPath();
 	if (playing1) {
